@@ -44,7 +44,7 @@ const Index = () => {
 
   // Calculate health score based on sensor data
   const calculateHealthScore = () => {
-    if (sensorData.length === 0) return 87;
+    if (sensorData.length === 0) return 0;
     
     const statusScores = {
       good: 100,
@@ -61,6 +61,7 @@ const Index = () => {
 
   const healthScore = calculateHealthScore();
   const getHealthCondition = (score: number) => {
+    if (score === 0) return "No data";
     if (score >= 80) return "Excellent condition";
     if (score >= 60) return "Good condition";
     if (score >= 40) return "Fair condition";
