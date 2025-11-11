@@ -12,7 +12,11 @@ interface SensorData {
   threshold: { min: number; max: number };
 }
 
-export const IoTSensors = () => {
+interface IoTSensorsProps {
+  onSensorUpdate?: (sensors: SensorData[]) => void;
+}
+
+export const IoTSensors = ({ onSensorUpdate }: IoTSensorsProps) => {
   const [sensors, setSensors] = useState<SensorData[]>([
     {
       id: "soil-temp",
@@ -54,8 +58,8 @@ export const IoTSensors = () => {
 
   useEffect(() => {
     const interval = setInterval(() => {
-      setSensors((prev) =>
-        prev.map((sensor) => {
+      setSensors((prev) => {
+        const updated = prev.map((sensor) => {
           const variance = sensor.id === "soil-ph" ? 0.2 : 5;
           const newValue = sensor.value + (Math.random() - 0.5) * variance;
           const clampedValue =
@@ -81,12 +85,15 @@ export const IoTSensors = () => {
             value: Math.round(clampedValue * 10) / 10,
             status,
           };
-        })
-      );
+        });
+        
+        onSensorUpdate?.(updated);
+        return updated;
+      });
     }, 3000);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [onSensorUpdate]);
 
   const getStatusColor = (status: string) => {
     switch (status) {

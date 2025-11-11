@@ -18,14 +18,56 @@ interface OptimizationSuggestion {
   priority: "high" | "medium" | "low";
 }
 
+interface SensorData {
+  id: string;
+  name: string;
+  value: number;
+  unit: string;
+  icon: React.ReactNode;
+  status: "good" | "warning" | "critical";
+  threshold: { min: number; max: number };
+}
+
 const Index = () => {
   const [predictionResult, setPredictionResult] = useState<PredictionResult | null>(null);
   const [optimizationSuggestions, setOptimizationSuggestions] = useState<OptimizationSuggestion[]>([]);
+  const [sensorData, setSensorData] = useState<SensorData[]>([]);
 
   const handlePredictionComplete = (result: PredictionResult, suggestions: OptimizationSuggestion[]) => {
     setPredictionResult(result);
     setOptimizationSuggestions(suggestions);
   };
+
+  const handleSensorUpdate = (sensors: SensorData[]) => {
+    setSensorData(sensors);
+  };
+
+  // Calculate health score based on sensor data
+  const calculateHealthScore = () => {
+    if (sensorData.length === 0) return 87;
+    
+    const statusScores = {
+      good: 100,
+      warning: 60,
+      critical: 20
+    };
+    
+    const totalScore = sensorData.reduce((sum, sensor) => {
+      return sum + statusScores[sensor.status];
+    }, 0);
+    
+    return Math.round(totalScore / sensorData.length);
+  };
+
+  const healthScore = calculateHealthScore();
+  const getHealthCondition = (score: number) => {
+    if (score >= 80) return "Excellent condition";
+    if (score >= 60) return "Good condition";
+    if (score >= 40) return "Fair condition";
+    return "Needs attention";
+  };
+
+  const alertCount = sensorData.filter(s => s.status === "critical" || s.status === "warning").length;
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background via-background to-muted/20">
@@ -49,14 +91,14 @@ const Index = () => {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <StatsCard
             title="Farm Health Score"
-            value="87%"
-            subtitle="Excellent condition"
+            value={`${healthScore}%`}
+            subtitle={getHealthCondition(healthScore)}
             icon={Activity}
-            trend="up"
+            trend={healthScore >= 80 ? "up" : healthScore >= 60 ? "neutral" : "down"}
           />
           <StatsCard
             title="Active Sensors"
-            value="4/4"
+            value={`${sensorData.length}/${sensorData.length}`}
             subtitle="All systems online"
             icon={TrendingUp}
             trend="neutral"
@@ -70,10 +112,10 @@ const Index = () => {
           />
           <StatsCard
             title="Alerts"
-            value="2"
-            subtitle="Requires attention"
+            value={alertCount.toString()}
+            subtitle={alertCount > 0 ? "Requires attention" : "All clear"}
             icon={AlertCircle}
-            trend="down"
+            trend={alertCount > 0 ? "down" : "up"}
           />
         </div>
 
@@ -89,7 +131,7 @@ const Index = () => {
             )}
 
             {/* IoT Sensors */}
-            <IoTSensors />
+            <IoTSensors onSensorUpdate={handleSensorUpdate} />
           </div>
 
           {/* Sidebar */}
